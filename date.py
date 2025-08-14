@@ -23,10 +23,10 @@ def date_extract(filename):
         date_object = DT.datetime.strptime(date_str, '%d%m%Y')
         new_date_str = date_object.strftime('%d/%m/%Y')
         print(f"Report date: {new_date_str} ")
+        return new_date_str
     else:
-        new_date_str = ""
         print("Date not found")
-    return new_date_str
+        return None
 
 def date_fallback():
     print(f"Today is {DT.date.today()}.\n")
