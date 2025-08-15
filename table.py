@@ -23,7 +23,7 @@ def table_new_column(filename: str, report_date: date):
         ws = wb[sheet_name]
 
         # Load a separate instance of the workbook in data_only mode to get calculated values
-        # This is crucial for correctly "freezing" the formulas
+        # This is crucial for correctly "freezing" the formulas.
         wb_values = openpyxl.load_workbook(filename, data_only=True)
         sheet_values = wb_values[sheet_name]
 
@@ -47,7 +47,7 @@ def table_new_column(filename: str, report_date: date):
                     end_column=new_range_end_col
                 )
 
-        # Loop through rows 1 to 50
+        # Loop through rows 1 to 50, following the successful logic pattern from daily.py
         for row_num in range(1, 51):
             source_cell = ws.cell(row=row_num, column=last_col_idx)
             dest_cell = ws.cell(row=row_num, column=new_col_idx)
@@ -55,39 +55,44 @@ def table_new_column(filename: str, report_date: date):
             if isinstance(dest_cell, MergedCell):
                 continue
             
-            # --- THIS IS THE FIX ---
-            # Get the pre-calculated value BEFORE modifying the source cell
+            # Get the pre-calculated value BEFORE any modifications
             source_cell_static_value = sheet_values.cell(row=row_num, column=last_col_idx).value
 
-            # 1) Copy cell style
+            # Step 1: Copy cell style (unconditionally, for all processed rows)
             copy_cell_style(source_cell, dest_cell)
 
-            # Special case for row 47: copy only the value
+            # Step 2: Handle cell values based on row number and data type
             if row_num == 47:
-                # Copy the static value to the new column
+                # Special case for row 47: copy only the value to the new column
                 dest_cell.value = source_cell_static_value
-                continue
-
-            # Process only formula cells for other rows
-            if source_cell.data_type == 'f':
+                # The source cell in row 47 is not modified ("frozen")
+            
+            elif source_cell.data_type == 'f':
+                # Case for formula cells (excluding row 47)
+                
                 # a) Copy and translate the formula to the new column
                 formula = source_cell.value
                 translator = Translator(formula, origin=source_cell.coordinate)
                 dest_cell.value = translator.translate_formula(dest_cell.coordinate)
                 
-                # b) Replace the formula in the source cell with its static value
-                source_cell.value = source_cell_static_value # type: ignore
+                # b) "Freeze" the source cell by replacing the formula with its static value
+                if source_cell_static_value is not None:
+                    source_cell.value = source_cell_static_value # type: ignore
+                else:
+                    # If cached value is not available, leave the original formula to prevent data loss
+                    print(f"Warning: Could not read cached value for formula in {source_cell.coordinate}. "
+                          f"The original formula was left unchanged.")
+            
+            # If the cell does not contain a formula and is not row 47, do nothing as requested.
                 
-        # 2) Insert the predefined date into the specified row
+        # Step 3: Insert the predefined date into the specified cell in the new column
         date_row = 1
         date_dest_cell = ws.cell(row=date_row, column=new_col_idx)
         
         if not isinstance(date_dest_cell, MergedCell):
             date_dest_cell.value = report_date
-            # Style for the date cell should also be copied
-            date_source_cell = ws.cell(row=date_row, column=last_col_idx)
-            copy_cell_style(date_source_cell, date_dest_cell)
-
+            # The style for the date cell was already copied inside the main loop
+            
         # Overwrite the original file
         output_filename = filename
         wb.save(output_filename)

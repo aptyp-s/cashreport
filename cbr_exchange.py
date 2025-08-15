@@ -7,7 +7,7 @@ def get_rates(date):
     url_fixed = 'https://www.cbr.ru/scripts/XML_daily.asp?date_req='
     # # enter date below (will import later)
     
-    print(f"CBR exchange rates for the date (dd/mm/YYYY): {date}")
+    print(f"CBR exchange rates for the date: {date}")
     url_full = url_fixed + date
     url_headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'

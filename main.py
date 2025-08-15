@@ -21,7 +21,7 @@ if keyrate_str is None:
     print("\nCouldn't get key rate from the web. Defaults to 18%.")
     keyrate_str = default_keyrate
 keyrate = float(keyrate_str)
-print(f"CBR key rate at the date (dd/mm/YYYY) {date_str} is {keyrate}%.")
+print(f"CBR key rate for the date: {keyrate}%.")
 
 first_update = update_daily_sheet(
     'Daily',
