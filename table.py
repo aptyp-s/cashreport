@@ -1,7 +1,5 @@
-import openpyxl
 from openpyxl.formula.translate import Translator
 from openpyxl.cell import MergedCell
-from datetime import date
 from daily import copy_cell_style
 
 def table_new_column(wb_formulas, wb_values, report_date):

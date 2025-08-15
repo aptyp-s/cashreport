@@ -1,9 +1,7 @@
-import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.cell import MergedCell
 from openpyxl.formula.translate import Translator
 from copy import copy
-import re
 
 def find_anchor_column(sheet, anchor_text="Rate from CBR"):
     for row in sheet.iter_rows(max_row=10):

@@ -1,5 +1,4 @@
 import requests
-import datetime as DT
 import xml.etree.ElementTree as ET
 
 def get_rates(date):
