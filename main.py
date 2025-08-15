@@ -1,7 +1,8 @@
 from cbr_exchange import get_rates, get_keyrate
-from daily import *
-from date import *
-from table import *
+from daily import update_daily_sheet
+from helper import get_filename, date_extract, date_fallback, find_excel_file_in_current_dir, file_save
+from table import table_new_column
+import openpyxl
 from datetime import datetime
 filename = get_filename()
 date_str = date_extract(filename)
@@ -23,14 +24,23 @@ if keyrate_str is None:
 keyrate = float(keyrate_str)
 print(f"CBR key rate for the date: {keyrate}%.")
 
-first_update = update_daily_sheet(
-    'Daily',
-    KR_date,
-    keyrate,
-    currency[usd],
-    currency[eur],
-    currency[cny]
-)
-if first_update:
-    table_new_column(first_update, KR_date)
-
+try:
+    excel_path = find_excel_file_in_current_dir()
+    wb_formulas = openpyxl.load_workbook(excel_path)
+    wb_values = openpyxl.load_workbook(excel_path, data_only=True)
+    
+    update_daily_sheet(
+        wb_formulas,
+        wb_values,
+        KR_date,
+        keyrate,
+        currency[usd],
+        currency[eur],
+        currency[cny]
+    )
+    table_new_column(wb_formulas, wb_values, KR_date)
+    file_save(excel_path, KR_date, wb_formulas)
+except FileNotFoundError as e:
+    print(e)
+except Exception as e:
+    print(f"An unexpected error occurred during the process: {e}")

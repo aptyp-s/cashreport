@@ -3,18 +3,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.cell import MergedCell
 from openpyxl.formula.translate import Translator
 from copy import copy
-import os
 import re
-
-def find_excel_file_in_current_dir():
-    excel_files = [f for f in os.listdir('.') if f.endswith('.xlsx') and not f.startswith('~')]
-    if len(excel_files) == 0:
-        raise FileNotFoundError("Source file not found.")
-    if len(excel_files) > 1:
-        print(f"More than one Excel file found: {excel_files}")
-        print(f"Using the first file: {excel_files[0]}")
-    
-    return excel_files[0]
 
 def find_anchor_column(sheet, anchor_text="Rate from CBR"):
     for row in sheet.iter_rows(max_row=10):
@@ -34,29 +23,23 @@ def copy_cell_style(source_cell, target_cell):
         target_cell.alignment = copy(source_cell.alignment)
 
 def update_daily_sheet(
-    sheet_name,
+    wb_formulas,
+    wb_values,
     new_date,
     new_key_rate,
     new_rub_usd,
     new_rub_eur,
     new_rub_cny
-):
-    """Main function to update the report."""
-    try:
-        excel_path = find_excel_file_in_current_dir()
-        print(f"Working with file: '{excel_path}'")
-    except FileNotFoundError as e:
-        print(e)
-        return None
-
-    print("Loading data from Excel...")
-    wb_formulas = openpyxl.load_workbook(excel_path)
+    ):
+    """Update Daily sheet"""
+    sheet_name = 'Daily'
+    
     if sheet_name not in wb_formulas.sheetnames:
         print(f"Error: Sheet with name '{sheet_name}' not found.")
         return None
     sheet_formulas = wb_formulas[sheet_name]
     
-    wb_values = openpyxl.load_workbook(excel_path, data_only=True)
+    
     sheet_values = wb_values[sheet_name]
 
     anchor_col_index = find_anchor_column(sheet_values)
@@ -117,17 +100,3 @@ def update_daily_sheet(
     prev_col_letter = get_column_letter(previous_column_index)
     if sheet_formulas.column_dimensions[prev_col_letter].width:
         sheet_formulas.column_dimensions[new_col_letter].width = sheet_formulas.column_dimensions[prev_col_letter].width
-    
-    pattern = r"\d{2}.\d{2}.\d{4}"
-    match = re.search(pattern, excel_path)
-    if match:
-        output_path = excel_path.replace(match.group(0), new_date.strftime("%d.%m.%Y"))
-    else:
-        output_path = excel_path.replace('.xlsx', '_updated.xlsx')
-    try:
-        wb_formulas.save(output_path)
-        print(f"\n{sheet_name} sheet has been successfully updated.")
-    except PermissionError:
-        print(f"\nError: Could not save file '{output_path}'. Please close Excel and try again.")
-        return
-    return output_path
