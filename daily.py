@@ -1,6 +1,6 @@
 from openpyxl.utils import get_column_letter
 from openpyxl.formula.translate import Translator
-from copy import copy
+from helper import copy_cell_style
 
 def find_anchor_column(sheet, anchor_text="Rate from CBR"):
     for row in sheet.iter_rows(max_row=10):
@@ -10,16 +10,7 @@ def find_anchor_column(sheet, anchor_text="Rate from CBR"):
                 return cell.column
     return None
 
-def copy_cell_style(source_cell, target_cell):
-    if source_cell.has_style:
-        target_cell.font = copy(source_cell.font)
-        target_cell.border = copy(source_cell.border)
-        target_cell.fill = copy(source_cell.fill)
-        target_cell.number_format = source_cell.number_format
-        target_cell.protection = copy(source_cell.protection)
-        target_cell.alignment = copy(source_cell.alignment)
-
-def update_daily_sheet(
+def update_daily_sheet_core(
     wb_formulas,
     wb_values,
     sheet_name,

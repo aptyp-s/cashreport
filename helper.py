@@ -2,10 +2,10 @@ import re
 import glob
 import os
 import datetime as DT
+from copy import copy
 
-def get_filename():
+def get_filename(fixed_part):
     folder_path = "source"
-    fixed_part = "Cash report_"
     pattern = f"{folder_path}/{fixed_part}*.xlsx"
     matching_files = glob.glob(pattern)
     if matching_files:
@@ -81,3 +81,12 @@ def file_save(excel_path, new_date, wb_formulas):
     except PermissionError:
         print(f"\nОшибка доступа к файлу '{output_path}'. Пожалуйста, закройте его в Excel и попробуйте снова.")
         return
+    
+def copy_cell_style(source_cell, target_cell):
+    if source_cell.has_style:
+        target_cell.font = copy(source_cell.font)
+        target_cell.border = copy(source_cell.border)
+        target_cell.fill = copy(source_cell.fill)
+        target_cell.number_format = source_cell.number_format
+        target_cell.protection = copy(source_cell.protection)
+        target_cell.alignment = copy(source_cell.alignment)
