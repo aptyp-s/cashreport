@@ -1,12 +1,11 @@
 import requests
 import xml.etree.ElementTree as ET
+from datetime import datetime
 
 def get_rates(date):
-    # parse CBR website to get XML response for current date
     url_fixed = 'https://www.cbr.ru/scripts/XML_daily.asp?date_req='
-    # # enter date below (will import later)
     
-    print(f"CBR exchange rates for the date: {date}")
+    print(f"Курсы валют ЦБ РФ на дату: {datetime.strptime(date, '%d/%m/%Y').strftime('%d.%m.%Y')}")
     url_full = url_fixed + date
     url_headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -28,14 +27,14 @@ def get_rates(date):
         response.raise_for_status()
         data = response.text
     except requests.exceptions.RequestException as e:
-        print(f"ERROR: An request error occurred: {e}")
-        print("Returning default exchange rates.")
+        print(f"Ошибка запроса: {e}")
+        print("Используются значение курсов валют по умолчанию.")
         currency = {}
         for tech_id, friendly_name in id_to_friendly.items():
             currency[friendly_name] = valute_match.get(tech_id)
         return currency
     except Exception as e:
-        print(f"ERROR: An unhandled exception occurred: {e}")
+        print(f"Неизвестная ошибка (курсы будут установлены по умолчанию): {e}")
         currency = {}
         for tech_id, friendly_name in id_to_friendly.items():
             currency[friendly_name] = valute_match.get(tech_id)
@@ -61,13 +60,12 @@ def get_rates(date):
                             clean_text = '0'
                         valute_match[valute_id] = float(clean_text)
                     except ValueError as e:
-                        print(f"Could not convert {vunit_rate_element.text} "
-                            f"to float for ID {valute_id}: {e}")
+                        print(f"Не удается конвертировать {vunit_rate_element.text} в переменную типа float для ID {valute_id}: {e}")
                         valute_match[valute_id] = 0.0
                 else:
-                    print(f"Rate not found for ID {valute_id}, using default value")
+                    print(f"Курс валюты с ID {valute_id} не найден, будет установлен стандартный курс.")
     else:
-        print("Failed to process XML data, using default values")
+        print("Не удалось обработать XML, курсы будут установлены по умолчанию.")
         currency = {}
         for tech_id, friendly_name in id_to_friendly.items():
             currency[friendly_name] = valute_match.get(tech_id)
@@ -77,6 +75,7 @@ def get_rates(date):
     currency = {}
     for tech_id, friendly_name in id_to_friendly.items():
         currency[friendly_name] = valute_match.get(tech_id)
+    print(currency)
     return currency
 
 # key rate will use a different method
@@ -116,17 +115,15 @@ def get_keyrate(target_date):
         if rate_element is not None and rate_element.text:
             # Преобразуем найденное значение в число
             key_rate_value = float(rate_element.text)
+            print(f"Ключевая ставка: {key_rate_value}%.")
             return key_rate_value
         else:
             print("Элемент с ключевой ставкой не найден в ответе.")
-            # Это может означать, что на запрашиваемую дату ставка не публиковалась.
-            # Можно посмотреть XML ответа для анализа:
+            # Можно посмотреть XML для анализа:
             # print(response.text)
             return None
 
     except requests.exceptions.HTTPError as err:
-        # 5. УЛУЧШЕННАЯ ОБРАБОТКА ОШИБОК: Печатаем не только статус, но и тело ответа.
-        #    В теле ответа сервер часто присылает детальное описание проблемы.
         print(f"Ошибка HTTP: {err}")
         print("--- Тело ответа сервера ---")
         print(err.response.text)

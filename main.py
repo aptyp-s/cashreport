@@ -4,25 +4,26 @@ from helper import get_filename, date_extract, date_fallback, find_excel_file_in
 from table import table_new_column
 import openpyxl
 from datetime import datetime
-filename = get_filename()
-date_str = date_extract(filename)
-if date_str is None:
-    date_str = date_fallback()
-currency = get_rates(date_str)
-print(currency)
+
 usd = 'USD/RUB'
 eur = 'EUR/RUB'
 cny = 'CNY/RUB'
 thb = 'THB/RUB'
+sheet_1 = 'Daily'
+sheet_2 = 'Cash in bank report'
+sheet_3 = 'Table'
+default_keyrate = 18.0
 
+filename = get_filename()
+date_str = date_extract(filename)
+if date_str is None:
+    date_str = date_fallback()
 KR_date = datetime.strptime(date_str, '%d/%m/%Y').date()
-default_keyrate = "18.00"
-keyrate_str = get_keyrate(KR_date)
-if keyrate_str is None:
-    print("\nCouldn't get key rate from the web. Defaults to 18%.")
-    keyrate_str = default_keyrate
-keyrate = float(keyrate_str)
-print(f"CBR key rate for the date: {keyrate}%.")
+currency = get_rates(date_str)
+
+keyrate = get_keyrate(KR_date)
+if keyrate is None:
+    keyrate = default_keyrate
 
 try:
     excel_path = find_excel_file_in_current_dir()
@@ -32,13 +33,14 @@ try:
     update_daily_sheet(
         wb_formulas,
         wb_values,
+        sheet_1,
         KR_date,
         keyrate,
         currency[usd],
         currency[eur],
         currency[cny]
     )
-    table_new_column(wb_formulas, wb_values, KR_date)
+    table_new_column(wb_formulas, wb_values, sheet_3, KR_date)
     file_save(excel_path, KR_date, wb_formulas)
 except FileNotFoundError as e:
     print(e)
