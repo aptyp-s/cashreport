@@ -90,3 +90,68 @@ def copy_cell_style(source_cell, target_cell):
         target_cell.number_format = source_cell.number_format
         target_cell.protection = copy(source_cell.protection)
         target_cell.alignment = copy(source_cell.alignment)
+
+def divide(value):
+    """Преобразует числовое значение, деля его на 1,000,000."""
+    # Если ячейка пустая (None) или содержит нечисловые данные, возвращаем 0
+    if not isinstance(value, (int, float)):
+        print(f"Предупреждение: значение '{value}' не является числом. Используется 0.")
+        return 0.0
+    return value / 1_000_000
+
+def clean_and_convert_to_float(value):
+    """Очищает строку от пробелов, заменяет запятую на точку и преобразует в float."""
+    if value is None:
+        return 0.0
+    
+    # Преобразуем значение в строку для безопасной обработки
+    s_value = str(value)
+    
+    # Убираем пробелы (включая неразрывные \xa0) и меняем запятую
+    cleaned_s_value = s_value.replace('\xa0', '').replace(' ', '').replace(',', '.')
+    
+    try:
+        return float(cleaned_s_value)
+    except (ValueError, TypeError):
+        # Если значение не является числом (например, текст), возвращаем 0
+        return 0.0
+    
+def update_formula_and_compare(target_ws, cell_address, new_value, currency_name):
+
+    target_cell = target_ws[cell_address]
+    existing_content = target_cell.value
+    old_value = 0.0
+
+    if not existing_content:
+        print(f"  - Предупреждение: Ячейка {cell_address} пуста. Обновление пропущено.")
+        return False
+
+    try:
+        # --- ЛОГИКА ОПРЕДЕЛЕНИЯ ТИПА СОДЕРЖИМОГО ---
+        if str(existing_content).startswith('='):
+            # --- СЛУЧАЙ 1: ЭТО ФОРМУЛА ---
+            parts = str(existing_content).split('*', 1)
+            if len(parts) < 2:
+                print(f"  - Предупреждение: Неожиданный формат формулы в {cell_address}. Обновление пропущено.")
+                return False
+            
+            old_value_str = parts[0].replace('=', '').strip()
+            old_value = float(old_value_str)
+            
+            static_part = parts[1]
+            new_formula = f"={new_value}*{static_part}"
+            target_cell.value = new_formula
+            print(f"  - {currency_name}: Формула в {cell_address} обновлена. Новое значение {new_value:.2f} vs старое {old_value:.2f}.")
+
+        else:
+            # --- СЛУЧАЙ 2: ЭТО ПРОСТОЕ ЗНАЧЕНИЕ ---
+            old_value = float(existing_content)
+            target_cell.value = new_value
+            print(f"  - {currency_name}: Значение в {cell_address} обновлено. Новое {new_value:.2f} vs старое {old_value:.2f}.")
+
+        # Возвращаем результат сравнения
+        return new_value > old_value
+
+    except (ValueError, IndexError) as e:
+        print(f"  - Ошибка при обработке ячейки {cell_address}: {e}. Обновление пропущено.")
+        return False

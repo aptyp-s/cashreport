@@ -76,3 +76,12 @@ def update_daily_sheet_core(
     if sheet_formulas.column_dimensions[prev_col_letter].width:
         sheet_formulas.column_dimensions[new_col_letter].width = sheet_formulas.column_dimensions[prev_col_letter].width
     print("Готово!")
+
+def update_cash_in_bank_core(wb_formulas, sheet_name, report_date, thb_rate):
+    if sheet_name not in wb_formulas.sheetnames:
+        print(f"Лист с именем '{sheet_name}' не найден.")
+        return None
+    
+    sheet = wb_formulas[sheet_name]
+    sheet['B2'] = report_date
+    sheet['E5'] = thb_rate

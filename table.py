@@ -1,7 +1,7 @@
 import openpyxl
 from openpyxl.formula.translate import Translator
 from openpyxl.utils import get_column_letter, column_index_from_string
-from helper import copy_cell_style, get_filename
+from helper import copy_cell_style, get_filename, divide, clean_and_convert_to_float, update_formula_and_compare
 
 def table_new_column(wb_formulas, wb_values, sheet_name, report_date):
     if sheet_name not in wb_formulas.sheetnames:
@@ -43,30 +43,7 @@ def table_new_column(wb_formulas, wb_values, sheet_name, report_date):
     print("Готово!")
     return new_column_name
 
-def divide(value):
-    """Преобразует числовое значение, деля его на 1,000,000."""
-    # Если ячейка пустая (None) или содержит нечисловые данные, возвращаем 0
-    if not isinstance(value, (int, float)):
-        print(f"Предупреждение: значение '{value}' не является числом. Используется 0.")
-        return 0.0
-    return value / 1_000_000
 
-def clean_and_convert_to_float(value):
-    """Очищает строку от пробелов, заменяет запятую на точку и преобразует в float."""
-    if value is None:
-        return 0.0
-    
-    # Преобразуем значение в строку для безопасной обработки
-    s_value = str(value)
-    
-    # Убираем пробелы (включая неразрывные \xa0) и меняем запятую
-    cleaned_s_value = s_value.replace('\xa0', '').replace(' ', '').replace(',', '.')
-    
-    try:
-        return float(cleaned_s_value)
-    except (ValueError, TypeError):
-        # Если значение не является числом (например, текст), возвращаем 0
-        return 0.0
 
 def copy_cpfo(wb_formulas, column, sheet_name):
     source_filename = get_filename(fixed_part = "Cash report_")
@@ -165,7 +142,7 @@ def copy_rbpi(wb_formulas, column, sheet_name):
     except Exception as e:
         print(f"Не удалось обработать файл '{source_filename}'. Ошибка: {e}")
 
-def copy_severnaya(wb_formulas, column, sheet_name):
+def copy_severnaya(wb_formulas, column, sheet_cib_name, sheet_table_name, sheet_de_name, report_date):
     source_filename = get_filename(fixed_part = "Cash_Severna")
 
     try:
@@ -198,26 +175,51 @@ def copy_severnaya(wb_formulas, column, sheet_name):
             print(f"Не удалось найти колонку с данными в '{source_filename}' на листе '{sheet_to_process}'.")
             return
 
-        # 2. Суммируем значения в найденном столбце
-        total_sum = 0.0
-        for row_idx in range(4, 13):
-            cell_value = ws.cell(row=row_idx, column=last_data_col_idx).value
-            total_sum += clean_and_convert_to_float(cell_value)
+         # 2. Расчет всех сумм
+        sum_ranges = {
+            'rub': (4, 13), 'eur': (14, 23), 'usd': (23, 31), 'cny': (31, 42)
+        }
+        sums = {}
+        for key, (start, end) in sum_ranges.items():
+            current_sum = sum(clean_and_convert_to_float(ws.cell(row, last_data_col_idx).value) for row in range(start, end))
+            sums[key] = current_sum / 1_000_000 # Сразу делим на миллион
         
-        print(f"Сумма по столбцу {get_column_letter(last_data_col_idx)} (строки 4-12): {total_sum:,.2f}")
+        # 3. Вставка суммы RUB в 'Table'
+        wb_formulas[sheet_table_name].cell(row=45, column=column_index_from_string(column), value=sums['rub'])
+        print(f"  - Сумма RUB ({sums['rub']:.2f}) записана в '{sheet_table_name}'.")
 
-        # 3. Делим на 1 миллион
-        final_value = divide(total_sum)
-        print(f"Итоговое значение для вставки (сумма / 1 млн): {final_value}")
+        # 4. Обновление формул и сравнение
+        target_ws_cib = wb_formulas[sheet_cib_name]
+        is_new_row_needed = False
 
-        # 4. Вставляем в целевую книгу
-        target_ws = wb_formulas[sheet_name]
-        target_row = 45
-        target_col_idx = column_index_from_string(column)
-        
-        target_ws.cell(row=target_row, column=target_col_idx, value=final_value)
-        
-        print(f"Значение успешно записано в столбец {column}, строку {target_row}.")
+        # (адрес ячейки, новое значение, название валюты)
+        updates_to_perform = [
+            ('E52', sums['eur'], 'EUR'),
+            ('E51', sums['usd'], 'USD'),
+            ('E53', sums['cny'], 'CNY'),
+        ]
+
+        for address, new_val, name in updates_to_perform:
+            if update_formula_and_compare(target_ws_cib, address, new_val, name):
+                is_new_row_needed = True # Если хоть одно сравнение True, поднимаем флаг
+
+        # 5. Условное добавление строки в 'Daily exchange'
+        if is_new_row_needed:
+            print("Обнаружено превышение старых значений, добавляю новую строку в 'Daily exchange'...")
+            target_ws_de = wb_formulas[sheet_de_name]
+            last_row = target_ws_de.max_row
+            new_row = last_row + 1
+            if last_row in target_ws_de.row_dimensions:
+                target_ws_de.row_dimensions[new_row].height = target_ws_de.row_dimensions[last_row].height
+            # Копирование стиля со всех ячеек предыдущей строки
+            for col in range(1, target_ws_de.max_column + 1):
+                copy_cell_style(target_ws_de.cell(last_row, col), target_ws_de.cell(new_row, col))
+            
+            # Вставка даты
+            target_ws_de.cell(new_row, 2).value = report_date # столбец B
+            print(f"ВНИМАНИЕ: На лист '{sheet_de_name}' добавлена новая строка ({new_row}) с датой {report_date.strftime('%d.%m.%Y')}.")
+        else:
+            print("Превышений над старыми значениями не обнаружено, новая строка не требуется.")
 
     except FileNotFoundError:
         print(f"Ошибка: Файл '{source_filename}' не найден.")
@@ -276,19 +278,19 @@ def copy_woysk(wb_formulas, column, sheet_name):
     except Exception as e:
         print(f"Не удалось обработать файл '{source_filename}'. Ошибка: {e}")
 
-def copy_stesha(wb_formulas, column, sheet_name):
+def copy_stesha(wb_formulas, column, target_sheet_name, sheet_name):
     source_filename = get_filename(fixed_part = "Stesha Cash report_")
 
     try:
         # Загружаем книгу только со значениями
         source_wb = openpyxl.load_workbook(source_filename, data_only=True)
         
-        sheet_to_process = "Cash in bank report"
-        if sheet_to_process not in source_wb.sheetnames:
-            print(f"Ошибка: Лист '{sheet_to_process}' не найден в файле '{source_filename}'.")
+        sheet1 = "Cash in bank report"
+        if sheet1 not in source_wb.sheetnames:
+            print(f"Ошибка: Лист '{sheet1}' не найден в файле '{source_filename}'.")
             return
         
-        ws = source_wb[sheet_to_process]
+        ws = source_wb[sheet1]
 
         # 1. Ищем последнюю непустую строку в столбце B (индекс 2), двигаясь снизу вверх
         last_value_raw = None
@@ -319,6 +321,41 @@ def copy_stesha(wb_formulas, column, sheet_name):
         target_ws.cell(row=target_row, column=target_col_idx, value=final_value)
         
         print(f"Значение успешно записано в столбец {column}, строку {target_row}.")
+        # Обновление листа Cash in bank report (валюты)
+        sheet2_name = "Daily exchange"
+        if sheet2_name in source_wb.sheetnames:
+            ws2 = source_wb[sheet2_name]
+            last_value_i = None
+            for row_idx in range(ws2.max_row, 0, -1):
+                cell_value = ws2.cell(row=row_idx, column=9).value
+                if cell_value is not None and str(cell_value).strip() != '':
+                    last_value_i = cell_value
+                    break
+
+            if last_value_i is not None:
+                new_variable_part = clean_and_convert_to_float(last_value_i)
+                if target_sheet_name in wb_formulas.sheetnames:
+                    target_ws_cib = wb_formulas[target_sheet_name]
+                    target_cell = target_ws_cib['G53']
+                    existing_formula = target_cell.value
+
+                    if existing_formula and str(existing_formula).startswith('='):
+                        parts = str(existing_formula).split('*', 1)
+                        if len(parts) > 1:
+                            static_part = parts[1]
+                            new_formula = f"={new_variable_part}*{static_part}"
+                            target_cell.value = new_formula
+                            print(f"Формула в '{target_sheet_name}'!G53 успешно обновлена на: {new_formula}")
+                        else:
+                            print(f"Ошибка - формула в G53 имеет неожиданный формат.")
+                    else:
+                        print(f"Задача 2: Ошибка - ячейка G53 не содержит формулу.")
+                else:
+                    print(f"Задача 2: Ошибка - целевой лист '{target_sheet_name}' не найден.")
+            else:
+                print(f"Задача 2: Не найдены данные в ст. I на листе '{sheet2_name}'.")
+        else:
+            print(f"Задача 2: Лист '{sheet2_name}' не найден в '{source_filename}'.")
 
     except FileNotFoundError:
         print(f"Ошибка: Файл '{source_filename}' не найден.")

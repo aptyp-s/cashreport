@@ -1,9 +1,8 @@
+import openpyxl
 from cbr_exchange import get_rates, get_keyrate
-from daily import update_daily_sheet_core
+from daily import update_daily_sheet_core, update_cash_in_bank_core
 from helper import get_filename, date_extract, date_fallback, find_excel_file_in_current_dir, file_save
 from table import table_new_column, copy_cpfo, copy_apk, copy_rbpi, copy_severnaya, copy_woysk, copy_stesha
-from cash_in_bank import update_cash_in_bank_core
-import openpyxl
 from datetime import datetime
 
 usd = 'USD/RUB'
@@ -13,6 +12,7 @@ thb = 'THB/RUB'
 sheet_1 = 'Daily'
 sheet_2 = 'Cash in bank report'
 sheet_3 = 'Table'
+sheet_4 = 'Daily exchange'
 default_keyrate = 18.0
 
 filename = get_filename(fixed_part = "Cash report_")
@@ -46,9 +46,9 @@ try:
     copy_cpfo(wb_formulas,column,sheet_3)
     copy_apk(wb_formulas,column,sheet_3)
     copy_rbpi(wb_formulas,column,sheet_3)
-    copy_severnaya(wb_formulas,column,sheet_3)
+    copy_severnaya(wb_formulas,column,sheet_2,sheet_3,sheet_4,KR_date)
     copy_woysk(wb_formulas,column,sheet_3)
-    copy_stesha(wb_formulas,column,sheet_3)
+    copy_stesha(wb_formulas,column,sheet_2,sheet_3)
     file_save(excel_path, KR_date, wb_formulas)
 except FileNotFoundError as e:
     print(e)
