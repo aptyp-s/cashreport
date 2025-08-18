@@ -10,7 +10,7 @@ def get_filename(fixed_part):
     matching_files = glob.glob(pattern)
     if matching_files:
         found_filename = matching_files[0]
-        print(f"Найден файл с датой отчета: {found_filename}")
+        print(f"Найден файл: {found_filename}")
     else:
         found_filename = ""
         print("Файл не найден.")

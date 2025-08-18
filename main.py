@@ -1,7 +1,7 @@
 from cbr_exchange import get_rates, get_keyrate
 from daily import update_daily_sheet_core
 from helper import get_filename, date_extract, date_fallback, find_excel_file_in_current_dir, file_save
-from table import table_new_column, copy_cpfo
+from table import table_new_column, copy_cpfo, copy_apk, copy_rbpi, copy_severnaya, copy_woysk, copy_stesha
 from cash_in_bank import update_cash_in_bank_core
 import openpyxl
 from datetime import datetime
@@ -44,6 +44,11 @@ try:
     update_cash_in_bank_core(wb_formulas, sheet_2, KR_date, currency[thb])
     column = table_new_column(wb_formulas, wb_values, sheet_3, KR_date)
     copy_cpfo(wb_formulas,column,sheet_3)
+    copy_apk(wb_formulas,column,sheet_3)
+    copy_rbpi(wb_formulas,column,sheet_3)
+    copy_severnaya(wb_formulas,column,sheet_3)
+    copy_woysk(wb_formulas,column,sheet_3)
+    copy_stesha(wb_formulas,column,sheet_3)
     file_save(excel_path, KR_date, wb_formulas)
 except FileNotFoundError as e:
     print(e)
