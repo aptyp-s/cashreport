@@ -142,7 +142,7 @@ def copy_rbpi(wb_formulas, column, sheet_name):
     except Exception as e:
         print(f"Не удалось обработать файл '{source_filename}'. Ошибка: {e}")
 
-def copy_severnaya(wb_formulas, column, sheet_cib_name, sheet_table_name, sheet_de_name, report_date):
+def copy_severnaya(wb_formulas, column, sheet_daily, sheet_cib_name, sheet_table_name, sheet_de_name, report_date):
     source_filename = get_filename(fixed_part = "Cash_Severna")
 
     try:
@@ -220,6 +220,81 @@ def copy_severnaya(wb_formulas, column, sheet_cib_name, sheet_table_name, sheet_
             print(f"ВНИМАНИЕ: На лист '{sheet_de_name}' добавлена новая строка ({new_row}) с датой {report_date.strftime('%d.%m.%Y')}.")
         else:
             print("Превышений над старыми значениями не обнаружено, новая строка не требуется.")
+        # ДЕПОЗИТЫ
+        ws_deposits = source_wb["Депозиты"]
+        
+        total_rur_row = None
+        for r_idx in range(1, ws_deposits.max_row + 1):
+            if ws_deposits.cell(row=r_idx, column=2).value == "Total RUR":
+                total_rur_row = r_idx
+                break
+        
+        if not total_rur_row:
+            print("  - ОШИБКА: Не найдена строка 'Total RUR' на листе 'Депозиты'. Операция прервана.")
+            return
+
+        # --- ШАГ 2: СБОР ДАННЫХ О ДЕПОЗИТАХ ---
+        deposit_data = []
+        for r_idx in range(8, total_rur_row):
+            # Считаем строку валидной, если в столбце D есть значение
+            if ws_deposits.cell(row=r_idx, column=4).value not in (None, ''):
+                deposit_data.append({
+                    'start_date': ws_deposits.cell(row=r_idx, column=5).value, # E -> A
+                    'due_date':   ws_deposits.cell(row=r_idx, column=6).value, # F -> B
+                    'rate':       ws_deposits.cell(row=r_idx, column=7).value, # G -> C
+                    'amount':     ws_deposits.cell(row=r_idx, column=4).value, # A -> D
+                })
+        
+        num_deposits = len(deposit_data)
+        print(f"  - Найдено {num_deposits} депозитов для синхронизации.")
+
+        # --- ШАГ 3: ПРОВЕРКА ДАННЫХ ПОСЛЕ "Total RUR" ---
+        has_data_after = any(
+            ws_deposits.cell(row=r_idx, column=c_idx).value not in (None, '')
+            for r_idx in range(total_rur_row + 1, min(total_rur_row + 11, ws_deposits.max_row + 1))
+            for c_idx in range(1, 8)
+        )
+        if has_data_after:
+            print("  - ВНИМАНИЕ: Обнаружены непустые строки в пределах 10 строк после 'Total RUR'. Проверьте исходный файл.")
+
+        # --- ШАГ 4: АНАЛИЗ ЦЕЛЕВОГО ЛИСТА "Daily" ---
+        ws_daily = wb_formulas[sheet_daily]
+        start_row_daily = 34
+        first_empty_daily_row = start_row_daily
+        while ws_daily.cell(row=first_empty_daily_row, column=1).value is not None:
+            first_empty_daily_row += 1
+        num_daily_rows = first_empty_daily_row - start_row_daily
+        
+        # --- ШАГ 5: СИНХРОНИЗАЦИЯ КОЛИЧЕСТВА СТРОК ---
+        diff = num_deposits - num_daily_rows
+        if diff > 0:
+            ws_daily.insert_rows(first_empty_daily_row, amount=diff)
+            print(f"  - Вставлено {diff} строк(и) в лист 'Daily'.")
+        elif diff < 0:
+            start_delete_row = first_empty_daily_row - abs(diff)
+            ws_daily.delete_rows(start_delete_row, amount=abs(diff))
+            print(f"  - Удалено {abs(diff)} строк(и) из листа 'Daily'.")
+        else:
+            print("  - Количество строк в 'Daily' совпадает, модификация структуры не требуется.")
+
+        new_last_row_nn = start_row_daily + num_deposits - 1
+
+        # --- ШАГ 6: КОПИРОВАНИЕ ДАННЫХ ---
+        for i, data in enumerate(deposit_data):
+            target_row = start_row_daily + i
+            ws_daily.cell(target_row, 1).value = data['start_date']
+            ws_daily.cell(target_row, 2).value = data['due_date']
+            ws_daily.cell(target_row, 3).value = data['rate']
+            amount_rub = clean_and_convert_to_float(data['amount'])
+            ws_daily.cell(target_row, 4).value = divide(amount_rub) if amount_rub else 0
+        print("  - Данные по депозитам успешно скопированы в 'Daily'.")
+
+        # --- ШАГ 7: ОБНОВЛЕНИЕ ФОРМУЛЫ В "Cash in bank report" ---
+        ws_cib = wb_formulas[sheet_cib_name]
+        new_formula = f"=SUM(Daily!D{start_row_daily}:D{new_last_row_nn})"
+        ws_cib['E47'].value = new_formula
+        print(f"  - Формула в 'Cash in bank report'!E47 обновлена на: {new_formula}")
+        print("Синхронизация депозитов завершена.")
 
     except FileNotFoundError:
         print(f"Ошибка: Файл '{source_filename}' не найден.")

@@ -46,7 +46,7 @@ try:
     copy_cpfo(wb_formulas,column,sheet_3)
     copy_apk(wb_formulas,column,sheet_3)
     copy_rbpi(wb_formulas,column,sheet_3)
-    copy_severnaya(wb_formulas,column,sheet_2,sheet_3,sheet_4,KR_date)
+    copy_severnaya(wb_formulas,column,sheet_1,sheet_2,sheet_3,sheet_4,KR_date)
     copy_woysk(wb_formulas,column,sheet_3)
     copy_stesha(wb_formulas,column,sheet_2,sheet_3)
     file_save(excel_path, KR_date, wb_formulas)
