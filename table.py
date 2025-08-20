@@ -270,6 +270,25 @@ def copy_severnaya(wb_formulas, column, sheet_daily, sheet_cib_name, sheet_table
         if diff > 0:
             ws_daily.insert_rows(first_empty_daily_row, amount=diff)
             print(f"  - Вставлено {diff} строк(и) в лист 'Daily'.")
+            # Строка, из которой будем копировать стиль (последняя строка с данными)
+            style_source_row = first_empty_daily_row - 1
+            
+            # Проверяем, что есть откуда копировать стиль
+            if style_source_row >= start_row_daily:
+                print(f"  - Копирование стиля из строки {style_source_row} в новые строки...")
+                # Проходим по каждой новой вставленной строке
+                for i in range(diff):
+                    current_new_row = first_empty_daily_row + i
+                    
+                    # Копируем высоту строки
+                    if style_source_row in ws_daily.row_dimensions:
+                        ws_daily.row_dimensions[current_new_row].height = ws_daily.row_dimensions[style_source_row].height
+                    
+                    # Проходим по каждой ячейке в новой строке и копируем стиль
+                    for col in range(1, ws_daily.max_column + 1):
+                        source_cell = ws_daily.cell(row=style_source_row, column=col)
+                        target_cell = ws_daily.cell(row=current_new_row, column=col)
+                        copy_cell_style(source_cell, target_cell) # Предполагается, что у вас есть эта функция
         elif diff < 0:
             start_delete_row = first_empty_daily_row - abs(diff)
             ws_daily.delete_rows(start_delete_row, amount=abs(diff))
