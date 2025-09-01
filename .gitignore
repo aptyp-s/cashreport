@@ -209,3 +209,4 @@ __marimo__/
 source/~*
 *.xlsx
 source/*.xlsx
+*.prof

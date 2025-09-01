@@ -1,7 +1,6 @@
-import openpyxl
 from openpyxl.formula.translate import Translator
 from openpyxl.utils import get_column_letter, column_index_from_string
-from helper import copy_cell_style, get_filename, divide, clean_and_convert_to_float, update_formula_and_compare
+from helper import copy_cell_style, divide, clean_and_convert_to_float, update_formula_and_compare
 
 def table_new_column(wb_formulas, wb_values, sheet_name, report_date):
     if sheet_name not in wb_formulas.sheetnames:
@@ -43,13 +42,15 @@ def table_new_column(wb_formulas, wb_values, sheet_name, report_date):
     print("Готово!")
     return new_column_name
 
-def copy_cpfo(wb_formulas, column, sheet_name):
-    source_filename = get_filename(fixed_part = "Cash report_")
+def copy_cpfo(wb_formulas, source_filename, column, sheet_name):
+    print(f"\n\n------------------С-П-Ф-О------------------\n\n")
+    if not source_filename:
+        print("Исходный файл не был загружен. Операция пропущена.")
+        return
     try:
-        source_wb = openpyxl.load_workbook(source_filename, data_only=True)
-        source_ws = source_wb.active
+        source_ws = source_filename.active
         if source_ws is None:
-            print(f"Ошибка: Не удалось найти активный лист в файле '{source_filename}'.")
+            print(f"Ошибка: Не удалось найти активный лист.")
             return
         source_range = 'B3:G3'
         target_ws = wb_formulas[sheet_name]
@@ -65,18 +66,20 @@ def copy_cpfo(wb_formulas, column, sheet_name):
         for i, value in enumerate(processed_values):
             target_ws.cell(row=start_row_idx + i, column=start_col_idx, value=value)
         print(f"Данные успешно скопированы в столбец {column} листа '{sheet_name}'.")
-    except FileNotFoundError:
-        print(f"Файл {source_filename} не найден.")
+    except Exception as e:
+        print(f"Ошибка обработки: {e}.")
     
-def copy_apk(wb_formulas, column, sheet_name):
-    source_filename = get_filename(fixed_part = "APK DON Deposit&loan ")
+def copy_apk(wb_formulas, source_filename, column, sheet_name):
+    print(f"\n\n------------------А-П-К-------------------\n\n")
+    if not source_filename:
+        print("Исходный файл для не был загружен. Операция пропущена.")
+        return
 
     try:
-        source_wb = openpyxl.load_workbook(source_filename, data_only=True)
-        source_ws = source_wb.active
+        source_ws = source_filename.active
         
         if source_ws is None:
-            print(f"Ошибка: Не найден активный лист в '{source_filename}'.")
+            print(f"Ошибка: Не найден активный лист.")
             return
             
         source_range = 'E3:O3'
@@ -84,10 +87,10 @@ def copy_apk(wb_formulas, column, sheet_name):
 
         # Читаем значения как есть, без обработки
         values_to_copy = [cell.value for cell in source_ws[source_range][0]]
-        print(f"Прочитанные значения из {source_filename}: {values_to_copy}")
+        print(f"Прочитанные значения: {values_to_copy}")
 
         if all(v is None for v in values_to_copy):
-            print(f"Значения в '{source_filename}' не найдены. Операция прервана.")
+            print(f"Значения не найдены. Операция прервана.")
             return
 
         # Записываем значения в целевой файл
@@ -97,22 +100,21 @@ def copy_apk(wb_formulas, column, sheet_name):
         for i, value in enumerate(values_to_copy):
             target_ws.cell(row=start_row_idx + i, column=start_col_idx, value=value)
 
-        print(f"Данные из {source_filename} успешно скопированы в столбец {column} (строки 13-23).")
-
-    except FileNotFoundError:
-        print(f"Ошибка: Файл '{source_filename}' не найден.")
+        print(f"Данные успешно скопированы в столбец {column} листа '{sheet_name}'.")
     except Exception as e:
-        print(f"Не удалось обработать файл '{source_filename}'. Ошибка: {e}")
+        print(f"Ошибка обработки: {e}.")
 
-def copy_rbpi(wb_formulas, column, sheet_name):
-    source_filename = get_filename(fixed_part = "RBPI DepositLoan Weekly report ")
+def copy_rbpi(wb_formulas, source_filename, column, sheet_name):
+    print(f"\n\n------------------Р-Б-П-И------------------\n\n")
+    if not source_filename:
+        print("Исходный файл не был загружен. Операция пропущена.")
+        return
 
     try:
-        source_wb = openpyxl.load_workbook(source_filename, data_only=True)
-        source_ws = source_wb.active
+        source_ws = source_filename.active
 
         if source_ws is None:
-            print(f"Ошибка: Не найден активный лист в '{source_filename}'.")
+            print(f"Ошибка: Не найден активный лист.")
             return
 
         source_range = 'E3:R3'
@@ -120,7 +122,7 @@ def copy_rbpi(wb_formulas, column, sheet_name):
 
         # Читаем значения как есть, без обработки
         values_to_copy = [cell.value for cell in source_ws[source_range][0]]
-        print(f"Прочитанные значения из {source_filename}: {values_to_copy}")
+        print(f"Прочитанные значения: {values_to_copy}")
 
         if all(v is None for v in values_to_copy):
             print(f"Значения в '{source_filename}' не найдены. Операция прервана.")
@@ -133,25 +135,23 @@ def copy_rbpi(wb_formulas, column, sheet_name):
         for i, value in enumerate(values_to_copy):
             target_ws.cell(row=start_row_idx + i, column=start_col_idx, value=value)
 
-        print(f"Данные из {source_filename} успешно скопированы в столбец {column} (строки 27-40).")
-    
-    except FileNotFoundError:
-        print(f"Ошибка: Файл '{source_filename}' не найден.")
+        print(f"Данные успешно скопированы в столбец {column} листа '{sheet_name}'.")
     except Exception as e:
-        print(f"Не удалось обработать файл '{source_filename}'. Ошибка: {e}")
+        print(f"Ошибка обработки {source_filename}: {e}.")
 
-def copy_severnaya(wb_formulas, column, sheet_cib_name, sheet_table_name, sheet_de_name, report_date):
-    source_filename = get_filename(fixed_part = "Cash_Severna")
+def copy_severnaya(wb_formulas, source_filename, column, sheet_cib_name, sheet_table_name, sheet_de_name, report_date):
+    print(f"\n\n------------------С-Е-В-Е-Р-Н-А-Я------------------\n\n")
+    if not source_filename:
+        print("Исходный файл для Северной не был загружен. Операция пропущена.")
+        return
 
     try:
-        source_wb = openpyxl.load_workbook(source_filename, data_only=True)
-        
         sheet_to_process = "Текущие счета"
-        if sheet_to_process not in source_wb.sheetnames:
-            print(f"Ошибка: Лист '{sheet_to_process}' не найден в файле '{source_filename}'.")
+        if sheet_to_process not in source_filename.sheetnames:
+            print(f"Ошибка: Лист '{sheet_to_process}' не найден.")
             return
         
-        ws = source_wb[sheet_to_process]
+        ws = source_filename[sheet_to_process]
 
         last_data_col_idx = None
         for col_idx in range(ws.max_column, 3, -1):
@@ -166,11 +166,11 @@ def copy_severnaya(wb_formulas, column, sheet_cib_name, sheet_table_name, sheet_
                     continue
                 else:
                     last_data_col_idx = col_idx
-                    print(f"Найдена последняя колонка с данными в '{source_filename}': {get_column_letter(last_data_col_idx)}")
+                    print(f"Найдена последняя колонка с данными: {get_column_letter(last_data_col_idx)}")
                     break # Выходим из цикла, как только нашли
 
         if last_data_col_idx is None:
-            print(f"Не удалось найти колонку с данными в '{source_filename}' на листе '{sheet_to_process}'.")
+            print(f"Не удалось найти колонку с данными на листе '{sheet_to_process}'.")
             return
 
          # 2. Расчет всех сумм
@@ -220,26 +220,24 @@ def copy_severnaya(wb_formulas, column, sheet_cib_name, sheet_table_name, sheet_
             print("Превышений над старыми значениями не обнаружено, новая строка не требуется.")
         
         # депозиты (проверка суммы)
-        deposits_sev = divide(deposit_integrator(source_wb,4,8,"Депозиты","Total RUR"))
+        deposits_sev = divide(deposit_integrator(source_filename,4,8,"Депозиты","Total RUR"))
         return deposits_sev
-    
-    except FileNotFoundError:
-        print(f"Ошибка: Файл '{source_filename}' не найден.")
     except Exception as e:
-        print(f"Не удалось обработать файл '{source_filename}'. Ошибка: {e}")
+        print(f"Ошибка обработки: {e}.")
 
-def copy_woysk(wb_formulas, column, sheet_name):
-    source_filename = get_filename(fixed_part = "Financial memorandum SW_")
+def copy_woysk(wb_formulas, source_filename, column, sheet_name):
+    print(f"\n\n------------------В-О-Й-С-К-О-В-И-Ц-Ы------------------\n\n")
+    if not source_filename:
+        print("Исходный файл не был загружен. Операция пропущена.")
+        return
 
     try:
-        source_wb = openpyxl.load_workbook(source_filename, data_only=True)
-        
         sheet_to_process = "accounts"
-        if sheet_to_process not in source_wb.sheetnames:
-            print(f"Ошибка: Лист '{sheet_to_process}' не найден в файле '{source_filename}'.")
+        if sheet_to_process not in source_filename.sheetnames:
+            print(f"Ошибка: Лист '{sheet_to_process}' не найден.")
             return
         
-        ws = source_wb[sheet_to_process]
+        ws = source_filename[sheet_to_process]
 
         last_data_col_idx = None
         for col_idx in range(ws.max_column, 0, -1):
@@ -247,11 +245,11 @@ def copy_woysk(wb_formulas, column, sheet_name):
             # Ищем первую непустую ячейку
             if cell_value is not None and cell_value != '':
                 last_data_col_idx = col_idx
-                print(f"Найдена последняя колонка с данными в '{source_filename}': {get_column_letter(last_data_col_idx)}")
+                print(f"Найдена последняя колонка с данными: {get_column_letter(last_data_col_idx)}")
                 break # Выходим из цикла, как только нашли
 
         if last_data_col_idx is None:
-            print(f"Не удалось найти колонку с данными в '{source_filename}' на листе '{sheet_to_process}'.")
+            print(f"Не удалось найти колонку с данными на листе '{sheet_to_process}'.")
             return
 
         # 2. Суммируем значения в найденном столбце
@@ -273,31 +271,27 @@ def copy_woysk(wb_formulas, column, sheet_name):
         
         target_ws.cell(row=target_row, column=target_col_idx, value=final_value)
         
-        print(f"Значение успешно записано в столбец {column}, строку {target_row}.")
+        print(f"Значение успешно записано в столбец {column}, строку {target_row} листа '{sheet_name}'.")
 
         # депозиты (проверка суммы)
-        deposits_woysk = divide(deposit_integrator(source_wb, 3, 9, "deposits", "Total RUR"))
+        deposits_woysk = divide(deposit_integrator(source_filename, 3, 9, "deposits", "Total RUR"))
         return deposits_woysk
-
-
-    except FileNotFoundError:
-        print(f"Ошибка: Файл '{source_filename}' не найден.")
     except Exception as e:
-        print(f"Не удалось обработать файл '{source_filename}'. Ошибка: {e}")
+        print(f"Ошибка обработки {source_filename}: {e}.")
 
-def copy_stesha(wb_formulas, column, target_sheet_name, sheet_name):
-    source_filename = get_filename(fixed_part = "Stesha Cash report_")
-
+def copy_stesha(wb_formulas, source_filename, column, target_sheet_name, sheet_name):
+    print(f"\n\n------------------С-Т-Е-Ш-А------------------\n\n")
+    if not source_filename:
+        print("Исходный файл не был загружен. Операция пропущена.")
+        return
     try:
-        # Загружаем книгу только со значениями
-        source_wb = openpyxl.load_workbook(source_filename, data_only=True)
-        
+
         sheet1 = "Cash in bank report"
-        if sheet1 not in source_wb.sheetnames:
-            print(f"Ошибка: Лист '{sheet1}' не найден в файле '{source_filename}'.")
+        if sheet1 not in source_filename.sheetnames:
+            print(f"Ошибка: Лист '{sheet1}' не найден.")
             return
         
-        ws = source_wb[sheet1]
+        ws = source_filename[sheet1]
 
         # 1. Ищем последнюю непустую строку в столбце B (индекс 2), двигаясь снизу вверх
         last_value_raw = None
@@ -309,11 +303,11 @@ def copy_stesha(wb_formulas, column, target_sheet_name, sheet_name):
             if cell_value is not None and str(cell_value).strip() != '':
                 last_value_raw = cell_value
                 last_row_found = row_idx
-                print(f"Найдено последнее значение в '{source_filename}': '{last_value_raw}' в строке {last_row_found}")
+                print(f"Найдено последнее значение: '{last_value_raw}' в строке {last_row_found}")
                 break # Выходим из цикла, как только нашли
 
         if last_value_raw is None:
-            print(f"Не удалось найти данные в столбце B файла '{source_filename}'.")
+            print(f"Не удалось найти данные в столбце B.")
             return
 
         # 2. Очищаем и преобразуем значение в число
@@ -330,8 +324,8 @@ def copy_stesha(wb_formulas, column, target_sheet_name, sheet_name):
         print(f"Значение успешно записано в столбец {column}, строку {target_row}.")
         # Обновление листа Cash in bank report (валюты)
         sheet2_name = "Daily exchange"
-        if sheet2_name in source_wb.sheetnames:
-            ws2 = source_wb[sheet2_name]
+        if sheet2_name in source_filename.sheetnames:
+            ws2 = source_filename[sheet2_name]
             last_value_i = None
             for row_idx in range(ws2.max_row, 0, -1):
                 cell_value = ws2.cell(row=row_idx, column=9).value
@@ -362,16 +356,13 @@ def copy_stesha(wb_formulas, column, target_sheet_name, sheet_name):
             else:
                 print(f"Задача 2: Не найдены данные в ст. I на листе '{sheet2_name}'.")
         else:
-            print(f"Задача 2: Лист '{sheet2_name}' не найден в '{source_filename}'.")
+            print(f"Задача 2: Лист '{sheet2_name}' не найден.")
 
         # депозиты (проверка суммы)
-        deposits_stesha = deposit_integrator(source_wb, 5, 4, "Time deposit", "Total")
+        deposits_stesha = deposit_integrator(source_filename, 5, 4, "Time deposit", "Total")
         return deposits_stesha
-
-    except FileNotFoundError:
-        print(f"Ошибка: Файл '{source_filename}' не найден.")
     except Exception as e:
-        print(f"Не удалось обработать файл '{source_filename}'. Ошибка: {e}")
+        print(f"Ошибка обработки: {e}.")
 
 def deposit_integrator(source_wb, column, first_row, sheet, text):
     ws_deposits = source_wb[sheet]
