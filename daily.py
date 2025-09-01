@@ -10,6 +10,18 @@ def find_anchor_column(sheet, anchor_text="Rate from CBR"):
                 return cell.column
     return None
 
+def find_deposit_range(sheet, start_row=34, end_row=60, col_idx=4, bounds=2):
+    range_limits = []
+    for current_row in range(start_row, end_row):
+        cell=sheet.cell(row=current_row,column=col_idx)
+        if cell.value is None or str(cell.value).strip()=='':
+            if current_row >= start_row and (not range_limits or range_limits[-1] != current_row):
+                print(f"Граница депозитов: {current_row}")
+                range_limits.append(current_row)
+            if len(range_limits)>=bounds:
+                break
+    return range_limits
+
 def update_daily_sheet_core(
     wb_formulas,
     wb_values,
@@ -75,7 +87,23 @@ def update_daily_sheet_core(
     prev_col_letter = get_column_letter(previous_column_index)
     if sheet_formulas.column_dimensions[prev_col_letter].width:
         sheet_formulas.column_dimensions[new_col_letter].width = sheet_formulas.column_dimensions[prev_col_letter].width
+
+    range_limits = find_deposit_range(sheet_values)
+    if not range_limits:
+        print(f"Не найдены пустые строки.")
+        return None
+    sums = {}
+    if len(range_limits)>=2:
+        range1_end=range_limits[0]
+        range2_end=range_limits[1]
+        sum_ranges = {
+            'sev': (34, range1_end), 'woysk': (range1_end+1, range2_end), 'stesha': (range2_end+1, range2_end+2)
+        }
+        sums = {}
+        for key, (start, end) in sum_ranges.items():
+            sums[key] = sum(sheet_values.cell(row, 4).value for row in range(start, end))
     print("Готово!")
+    return sums
 
 def update_cash_in_bank_core(wb_formulas, sheet_name, report_date, thb_rate):
     if sheet_name not in wb_formulas.sheetnames:

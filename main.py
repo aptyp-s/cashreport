@@ -30,8 +30,7 @@ try:
     excel_path = find_excel_file_in_current_dir()
     wb_formulas = openpyxl.load_workbook(excel_path)
     wb_values = openpyxl.load_workbook(excel_path, data_only=True)
-    
-    update_daily_sheet_core(
+    sums = update_daily_sheet_core(
         wb_formulas,
         wb_values,
         sheet_1,
@@ -46,9 +45,25 @@ try:
     copy_cpfo(wb_formulas,column,sheet_3)
     copy_apk(wb_formulas,column,sheet_3)
     copy_rbpi(wb_formulas,column,sheet_3)
-    copy_severnaya(wb_formulas,column,sheet_2,sheet_3,sheet_4,KR_date)
-    copy_woysk(wb_formulas,column,sheet_3)
-    copy_stesha(wb_formulas,column,sheet_2,sheet_3)
+    deposit_sev = copy_severnaya(wb_formulas,column,sheet_2,sheet_3,sheet_4,KR_date)
+    deposit_woysk = copy_woysk(wb_formulas,column,sheet_3)
+    deposit_stesha = copy_stesha(wb_formulas,column,sheet_2,sheet_3)
+    print(f"\n\n------------------П-Р-О-В-Е-Р-К-А---Д-Е-П-О-З-И-Т-О-В------------------\n\n")
+    if sums is None:
+        print("Суммы депозитов не найдены.")
+    else:
+        if deposit_sev != sums['sev']:
+            print("Надо обновить депозиты Северной.")
+        else:
+            print("Не нужно обновлять депозиты Северной.")
+        if deposit_woysk != sums['woysk']:
+            print("Надо обновить депозиты Войсковиц.")
+        else:
+            print("Не нужно обновлять депозиты Войсковиц.")
+        if deposit_stesha != sums['stesha']:
+            print("Надо обновить депозиты Стеши.")
+        else:
+            print("Не нужно обновлять депозиты Стеши.")
     file_save(excel_path, KR_date, wb_formulas)
 except FileNotFoundError as e:
     print(e)

@@ -25,7 +25,7 @@ def table_new_column(wb_formulas, wb_values, sheet_name, report_date):
 
         copy_cell_style(source_cell, dest_cell)
 
-        # Временно для сипи трейдинга
+        # для сипи трейдинга
         if row_num == 47:
             dest_cell.value = source_cell_static_value
         
@@ -42,8 +42,6 @@ def table_new_column(wb_formulas, wb_values, sheet_name, report_date):
     date_dest_cell.value = report_date
     print("Готово!")
     return new_column_name
-
-
 
 def copy_cpfo(wb_formulas, column, sheet_name):
     source_filename = get_filename(fixed_part = "Cash report_")
@@ -221,6 +219,10 @@ def copy_severnaya(wb_formulas, column, sheet_cib_name, sheet_table_name, sheet_
         else:
             print("Превышений над старыми значениями не обнаружено, новая строка не требуется.")
         
+        # депозиты (проверка суммы)
+        deposits_sev = divide(deposit_integrator(source_wb,4,8,"Депозиты","Total RUR"))
+        return deposits_sev
+    
     except FileNotFoundError:
         print(f"Ошибка: Файл '{source_filename}' не найден.")
     except Exception as e:
@@ -272,6 +274,11 @@ def copy_woysk(wb_formulas, column, sheet_name):
         target_ws.cell(row=target_row, column=target_col_idx, value=final_value)
         
         print(f"Значение успешно записано в столбец {column}, строку {target_row}.")
+
+        # депозиты (проверка суммы)
+        deposits_woysk = divide(deposit_integrator(source_wb, 3, 9, "deposits", "Total RUR"))
+        return deposits_woysk
+
 
     except FileNotFoundError:
         print(f"Ошибка: Файл '{source_filename}' не найден.")
@@ -357,7 +364,30 @@ def copy_stesha(wb_formulas, column, target_sheet_name, sheet_name):
         else:
             print(f"Задача 2: Лист '{sheet2_name}' не найден в '{source_filename}'.")
 
+        # депозиты (проверка суммы)
+        deposits_stesha = deposit_integrator(source_wb, 5, 4, "Time deposit", "Total")
+        return deposits_stesha
+
     except FileNotFoundError:
         print(f"Ошибка: Файл '{source_filename}' не найден.")
     except Exception as e:
         print(f"Не удалось обработать файл '{source_filename}'. Ошибка: {e}")
+
+def deposit_integrator(source_wb, column, first_row, sheet, text):
+    ws_deposits = source_wb[sheet]
+        
+    total_rur_row = None
+    for r_idx in range(1, ws_deposits.max_row + 1):
+        if ws_deposits.cell(row=r_idx, column=2).value == text:
+            total_rur_row = r_idx
+            break
+    
+    if not total_rur_row:
+        print(f"  - ОШИБКА: Не найдена строка '{text}' на листе '{sheet}'. Операция прервана.")
+        return
+    
+    deposits_sum = sum(
+        cell.value if isinstance(cell.value, (int, float)) else 0
+        for cell in (ws_deposits.cell(row,column) for row in range (first_row, total_rur_row))
+        )
+    return deposits_sum
