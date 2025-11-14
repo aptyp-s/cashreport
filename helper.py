@@ -155,3 +155,37 @@ def update_formula_and_compare(target_ws, cell_address, new_value, currency_name
     except (ValueError, IndexError) as e:
         print(f"  - Ошибка при обработке ячейки {cell_address}: {e}. Обновление пропущено.")
         return False
+    
+def clear_external_reference(wb_formulas, wb_values):
+    print("Убираю внешние ссылки")
+
+    for sheet_name in wb_formulas.sheetnames:
+        ws_formulas = wb_formulas[sheet_name]
+        ws_values = wb_values[sheet_name]
+        
+        print(f"Обрабатывается лист: '{sheet_name}'")
+
+        for row in ws_formulas.iter_rows():
+            for cell in row:
+                if cell.data_type == 'f':  # Проверка, что ячейка содержит формулу
+                    formula_text = str(cell.value)
+                    
+                    # Ищем признаки внешней ссылки (квадратные скобки)
+                    if '[' in formula_text and ']' in formula_text:
+                        cell_coords = cell.coordinate
+                        cached_value = ws_values[cell_coords].value
+                        
+                        # Заменяем формулу на значение
+                        cell.value = cached_value
+                        print(f"  В ячейке {cell_coords} формула '{formula_text}' заменена на значение '{cached_value}'")
+
+    # --- ИСПРАВЛЕНО: Очистка метаданных через внутренний атрибут ---
+    if hasattr(wb_formulas, '_external_links'):  # Проверяем наличие атрибута
+        print("\nОчистка метаданных о внешних ссылках...")
+        wb_formulas._external_links = []  # Очищаем внутренний список внешних ссылок
+        print("Метаданные о внешних ссылках успешно очищены.")
+    else:
+        print("\nПредупреждение: Не удалось найти атрибут '_external_links'. "
+              "Версия openpyxl может отличаться. Пропуск очистки метаданных.")
+    
+    print("Все внешние формулы были заменены на их значения.")

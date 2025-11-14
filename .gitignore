@@ -210,3 +210,8 @@ source/~*
 *.xlsx
 source/*.xlsx
 *.prof
+*.zip
+*.xml
+*.rels
+*.vml
+archive/~*
