@@ -1,7 +1,8 @@
 import openpyxl
 from cbr_exchange import get_rates, get_keyrate
 from daily import update_daily_sheet_core, update_cash_in_bank_core
-from helper import get_filename, date_extract, date_fallback, find_excel_file_in_current_dir, file_save, clear_external_reference
+from helper import get_filename, date_extract, date_fallback, find_excel_file_in_current_dir, file_save
+# , clear_external_reference
 from table import table_new_column, copy_cpfo, copy_apk, copy_rbpi, copy_severnaya, copy_woysk, copy_stesha
 from datetime import datetime
 import sys
@@ -67,7 +68,7 @@ except Exception as e:
 
 print("--- Все файлы успешно загружены в память. Начинаю обработку. ---\n")
 try:
-    clear_external_reference(wb_formulas, wb_values)
+    # clear_external_reference(wb_formulas, wb_values)
     sums = update_daily_sheet_core(
         wb_formulas,
         wb_values,
