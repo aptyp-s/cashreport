@@ -54,16 +54,18 @@ try:
 
     for key, path in source_files_map.items():
         if path:
-            print(f"Загружаю '{path}'...")
-            source_workbooks[key] = openpyxl.load_workbook(path, data_only=True)
+            print(f"Загружаю '{path}'...", end="")
+            try:
+                source_workbooks[key] = openpyxl.load_workbook(path, data_only=True)
+                print("OK")
+            except Exception as e:
+                print(f"\nОшибка при загрузке '{path}': {e}.")
+                source_workbooks[key] = None
         else:
             print(f"Предупреждение: не найден исходный файл для '{key}'.")
             source_workbooks[key] = None
 except FileNotFoundError as e:
         print(f"Критическая ошибка: {e}. Работа программы прекращена.")
-        sys.exit(1)
-except Exception as e:
-        print(f"Неожиданная ошибка при загрузке файлов: {e}. Работа программы прекращена.")
         sys.exit(1)
 
 print("--- Все файлы успешно загружены в память. Начинаю обработку. ---\n")
