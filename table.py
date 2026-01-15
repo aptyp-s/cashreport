@@ -156,18 +156,12 @@ def copy_severnaya(wb_formulas, source_filename, column, sheet_cib_name, sheet_t
         last_data_col_idx = None
         for col_idx in range(ws.max_column, 3, -1):
             cell_value = ws.cell(row=4, column=col_idx).value
+            
             # Ищем первую непустую ячейку
             if cell_value is not None and cell_value != '':
-                prev_1_is_empty = ws.cell(row=4, column=col_idx - 1).value in (None, '')
-                prev_2_is_empty = ws.cell(row=4, column=col_idx - 2).value in (None, '')
-                prev_3_is_empty = ws.cell(row=4, column=col_idx - 3).value in (None, '')
-                if prev_1_is_empty and prev_2_is_empty and prev_3_is_empty:
-                    print(f"Столбец {get_column_letter(col_idx)}, не последний, поиск продолжается...")
-                    continue
-                else:
-                    last_data_col_idx = col_idx
-                    print(f"Найдена последняя колонка с данными: {get_column_letter(last_data_col_idx)}")
-                    break # Выходим из цикла, как только нашли
+                last_data_col_idx = col_idx
+                print(f"Найдена последняя колонка с данными: {get_column_letter(last_data_col_idx)}")
+                break # Выходим из цикла, как только нашли
 
         if last_data_col_idx is None:
             print(f"Не удалось найти колонку с данными на листе '{sheet_to_process}'.")
