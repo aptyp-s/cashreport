@@ -215,3 +215,5 @@ source/*.xlsx
 *.rels
 *.vml
 archive/~*
+*.cmd
+*.exe

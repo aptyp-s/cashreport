@@ -107,3 +107,4 @@ for tech_id, friendly_name in id_to_friendly.items():
     currency[friendly_name] = valute_match.get(tech_id)
 
 print(currency)
+input("Press Enter to exit...")
