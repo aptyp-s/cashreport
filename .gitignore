@@ -217,3 +217,11 @@ source/*.xlsx
 archive/~*
 *.cmd
 *.exe
+xml-tester.dist/~*
+xml-tester.dist/certifi/cacert.pem
+xml-tester.dist/xml-tester.dll
+xml-tester.dist/vcruntime140.dll
+xml-tester.dist/vcruntime140_1.dll
+xml-tester.dist/python314.dll
+xml-tester.dist/libssl-3.dll
+xml-tester.dist/libcrypto-3.dll
