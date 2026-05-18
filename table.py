@@ -320,35 +320,39 @@ def copy_stesha(wb_formulas, source_filename, column, target_sheet_name, sheet_n
         sheet2_name = "Daily exchange"
         if sheet2_name in source_filename.sheetnames:
             ws2 = source_filename[sheet2_name]
-            last_value_i = None
+            last_data_row = None
             for row_idx in range(ws2.max_row, 0, -1):
-                cell_value = ws2.cell(row=row_idx, column=9).value
-                if cell_value is not None and str(cell_value).strip() != '':
-                    last_value_i = cell_value
+                date_cell = ws2.cell(row=row_idx, column=2).value
+                if date_cell is not None and str(date_cell).strip() != '':
+                    last_data_row = row_idx
                     break
-
-            if last_value_i is not None:
-                new_variable_part = clean_and_convert_to_float(last_value_i)
-                if target_sheet_name in wb_formulas.sheetnames:
-                    target_ws_cib = wb_formulas[target_sheet_name]
-                    target_cell = target_ws_cib['G53']
-                    existing_formula = target_cell.value
-
-                    if existing_formula and str(existing_formula).startswith('='):
-                        parts = str(existing_formula).split('*', 1)
-                        if len(parts) > 1:
-                            static_part = parts[1]
-                            new_formula = f"={new_variable_part}*{static_part}"
-                            target_cell.value = new_formula
-                            print(f"Формула в '{target_sheet_name}'!G53 успешно обновлена на: {new_formula}")
-                        else:
-                            print(f"Ошибка - формула в G53 имеет неожиданный формат.")
-                    else:
-                        print(f"Задача 2: Ошибка - ячейка G53 не содержит формулу.")
-                else:
-                    print(f"Задача 2: Ошибка - целевой лист '{target_sheet_name}' не найден.")
+            # there's a bug above because the value must've been 0 for 2 months
+            if last_data_row is not None:
+                cell_value = ws2.cell(row=last_data_row, column=9).value
+                # Treat empty/blank as 0, not as "inherit previous"
+                last_value_i = cell_value if (cell_value is not None and str(cell_value).strip() != '') else 0
             else:
-                print(f"Задача 2: Не найдены данные в ст. I на листе '{sheet2_name}'.")
+                print(f"Задача 2: Не найдены данные на листе '{sheet2_name}'. Используется значение 0 для расчета.")
+                last_value_i = 0
+            new_variable_part = clean_and_convert_to_float(last_value_i)
+            if target_sheet_name in wb_formulas.sheetnames:
+                target_ws_cib = wb_formulas[target_sheet_name]
+                target_cell = target_ws_cib['G53']
+                existing_formula = target_cell.value
+
+                if existing_formula and str(existing_formula).startswith('='):
+                    parts = str(existing_formula).split('*', 1)
+                    if len(parts) > 1:
+                        static_part = parts[1]
+                        new_formula = f"={new_variable_part}*{static_part}"
+                        target_cell.value = new_formula
+                        print(f"Формула в '{target_sheet_name}'!G53 успешно обновлена на: {new_formula}")
+                    else:
+                        print(f"Ошибка - формула в G53 имеет неожиданный формат.")
+                else:
+                    print(f"Задача 2: Ошибка - ячейка G53 не содержит формулу.")
+            else:
+                print(f"Задача 2: Ошибка - целевой лист '{target_sheet_name}' не найден.")
         else:
             print(f"Задача 2: Лист '{sheet2_name}' не найден.")
 
