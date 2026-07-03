@@ -16,7 +16,7 @@ def table_new_column(wb_formulas, wb_values, sheet_name, report_date):
     new_column_name = get_column_letter(new_col_idx)
     print(f"Последний столбец с данными: {get_column_letter(last_col_idx)}. Новый столбец: {new_column_name}.")
     
-    for row_num in range(1, 51):
+    for row_num in range(1, 52):
         source_cell = ws.cell(row=row_num, column=last_col_idx)
         dest_cell = ws.cell(row=row_num, column=new_col_idx)
         
@@ -25,7 +25,7 @@ def table_new_column(wb_formulas, wb_values, sheet_name, report_date):
         copy_cell_style(source_cell, dest_cell)
 
         # для сипи трейдинга
-        if row_num == 47:
+        if row_num == 48:
             dest_cell.value = source_cell_static_value
         
         elif source_cell.data_type == 'f':
@@ -52,7 +52,7 @@ def copy_cpfo(wb_formulas, source_filename, column, sheet_name):
         if source_ws is None:
             print(f"Ошибка: Не удалось найти активный лист.")
             return
-        source_range = 'B3:G3'
+        source_range = 'B3:H3'
         target_ws = wb_formulas[sheet_name]
         source_values_raw = [cell.value for cell in source_ws[source_range][0]]
         if all(v is None for v in source_values_raw):
@@ -94,7 +94,7 @@ def copy_apk(wb_formulas, source_filename, column, sheet_name):
             return
 
         # Записываем значения в целевой файл
-        start_row_idx = 13
+        start_row_idx = 14
         start_col_idx = column_index_from_string(column)
 
         for i, value in enumerate(values_to_copy):
@@ -129,7 +129,7 @@ def copy_rbpi(wb_formulas, source_filename, column, sheet_name):
             return
 
         # Записываем значения в целевой файл
-        start_row_idx = 27
+        start_row_idx = 28
         start_col_idx = column_index_from_string(column)
 
         for i, value in enumerate(values_to_copy):
@@ -177,7 +177,7 @@ def copy_severnaya(wb_formulas, source_filename, column, sheet_cib_name, sheet_t
             sums[key] = current_sum / 1_000_000 # Сразу делим на миллион
         
         # 3. Вставка суммы RUB в 'Table'
-        wb_formulas[sheet_table_name].cell(row=45, column=column_index_from_string(column), value=sums['rub'])
+        wb_formulas[sheet_table_name].cell(row=46, column=column_index_from_string(column), value=sums['rub'])
         print(f"  - Сумма RUB ({sums['rub']:.2f}) записана в '{sheet_table_name}'.")
 
         # 4. Обновление формул и сравнение
@@ -260,7 +260,7 @@ def copy_woysk(wb_formulas, source_filename, column, sheet_name):
 
         # 4. Вставляем в целевую книгу
         target_ws = wb_formulas[sheet_name]
-        target_row = 46
+        target_row = 47
         target_col_idx = column_index_from_string(column)
         
         target_ws.cell(row=target_row, column=target_col_idx, value=final_value)
@@ -310,7 +310,7 @@ def copy_stesha(wb_formulas, source_filename, column, target_sheet_name, sheet_n
 
         # 3. Вставляем в целевую книгу
         target_ws = wb_formulas[sheet_name]
-        target_row = 48
+        target_row = 49
         target_col_idx = column_index_from_string(column)
         
         target_ws.cell(row=target_row, column=target_col_idx, value=final_value)
