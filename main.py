@@ -20,7 +20,7 @@ DEFAULT_KEYRATE = 14.25
 PREFIX_CPFO = "Cash report_"
 PREFIX_APK = "APK DON Deposit&loan "
 PREFIX_RBPI = "RBPI DepositLoan Weekly report "
-PREFIX_SEV = "Копия Cash_Severna"
+PREFIX_SEV = "Cash_Severna"
 PREFIX_WOYSK = "Financial memorandum SW_"
 PREFIX_STESHA = "Stesha Cash report_"
 
