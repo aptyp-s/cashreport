@@ -21,7 +21,7 @@ def date_extract(filename):
     match = re.search(pattern, filename)
     if match:
         date_str = match.group(0)
-        date_object = DT.datetime.strptime(date_str, '%d%m%Y')
+        date_object = DT.datetime.strptime(date_str, '%d%m%Y') - DT.timedelta(days=1)
         new_date_str = date_object.strftime('%d/%m/%Y')
         print(f"Дата отчета: {date_object.strftime('%d.%m.%Y')} ")
         return new_date_str
