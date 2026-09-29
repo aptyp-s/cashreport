@@ -214,7 +214,7 @@ def copy_severnaya(wb_formulas, source_filename, column, sheet_cib_name, sheet_t
             print("Превышений над старыми значениями не обнаружено, новая строка не требуется.")
         
         # депозиты (проверка суммы)
-        deposits_sev = divide(deposit_integrator(source_filename,4,8,"Депозиты","Total RUR"))
+        deposits_sev = divide(deposit_integrator(source_filename,4,8,"депозиты","Total RUR"))
         return deposits_sev
     except Exception as e:
         print(f"Ошибка обработки: {e}.")
